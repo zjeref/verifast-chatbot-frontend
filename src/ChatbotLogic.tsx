@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getIndexSuggestions, getIndexToName, getIndexToBotName, isGAEnabled, getIntro } from './constants';
+import {  getIntro } from './constants';
 import {MUIChatBot} from './WhatsappLayout';
 import { MessageType } from './ChatData';
 import { useEffect, useState } from "react";
@@ -47,7 +47,7 @@ const ChatbotOnly = () => {
   const resolved_intro = () => {
     let configuredIntro = getIntro(selectedIndex)
     if (!configuredIntro) {
-      configuredIntro = `How can we help you with ${getIndexToName(selectedIndex)}`
+      configuredIntro = `How can we help you with Verifast`
     }
     return [createAIMessage(configuredIntro)];
   }
@@ -61,13 +61,35 @@ const ChatbotOnly = () => {
   }
 
 
+  async function invokeChatEndpoint(query: string): Promise<any> {
+    const url = 'http://localhost:5000/verifast'; // Replace with your server URL
+    const headers = {
+        'Content-Type': 'application/json'
+    };
 
+    const payload = {
+        query: query
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
 
   const handleSendMessage = async (query: string) => {
     setRequiredClickableMessages(0)
     console.debug(`sending msg with sessionId ${sessionId}`)
-    // if (socket !== null) socket.emit('query', { query, selectedIndex, sessionId, botPage })
-    // else console.error("Socket was null")
+    const {text, images} = await invokeChatEndpoint(query);
+    setInProgress(false)
+    addAiMessage(text)
   }
 
 
@@ -86,11 +108,11 @@ const ChatbotOnly = () => {
     queryInProgress={inProgress}
     processQuery={handleSendMessage}
     addUserMessageToChat={addUserMessage}
-    helperBubbleMessages={getIndexSuggestions(selectedIndex, requiredClickableMessages)}
+    helperBubbleMessages={[]}
     aiName='Mark'
-    botName={getIndexToBotName(selectedIndex)}
+    botName='VeriBot'
     indexName={selectedIndex}
-    integrateGA={isGAEnabled(defaultIndex)}
+    integrateGA={false}
   />
 
 };
