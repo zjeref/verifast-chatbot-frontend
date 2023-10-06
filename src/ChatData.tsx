@@ -44,8 +44,8 @@ export class CustomerMessage implements MessageType {
 function dateToMsgTime(time: Date) {
     let hours = `${time.getHours()}`;
     let minutes = `${time.getMinutes()}`;
-    if (hours.length == 1) hours = '0' + hours;
-    if (minutes.length == 1) minutes = '0' + minutes;
+    if (hours.length === 1) hours = '0' + hours;
+    if (minutes.length === 1) minutes = '0' + minutes;
     const msgTime = `${hours}:${minutes}`;
     return msgTime;
 }

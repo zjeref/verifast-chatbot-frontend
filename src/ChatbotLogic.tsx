@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getIndexSuggestions, getIndexToName, getIndexToBotName, isGAEnabled, getIntro } from './constants';
-import WhatsappLayout from './WhatsappLayout';
+import {MUIChatBot} from './WhatsappLayout';
 import { AIMessage, CustomerMessage, MessageType } from './ChatData';
 import { useEffect, useState } from "react";
 import { useLocation } from 'react-router-dom';
@@ -73,7 +73,8 @@ const ChatbotOnly = () => {
 
 
 
-  return <WhatsappLayout
+  return <MUIChatBot
+    intro={[]}
     messeges={messages}
     queryInProgress={inProgress}
     processQuery={handleSendMessage}

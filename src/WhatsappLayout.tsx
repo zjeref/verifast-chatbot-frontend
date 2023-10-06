@@ -1,12 +1,122 @@
-import React, { ChangeEvent, useState, KeyboardEvent } from 'react'
-import { AIMessage, MessageType, ChatBotProps } from './ChatData';
-import { getIndexToBotHeaderImage, toDateString } from './constants';
+import React, { useState, ChangeEvent, KeyboardEvent } from 'react';
+import Typewriter from 'typewriter-effect';
+import Linkify from 'react-linkify';
+import { Typography, IconButton, Grid, Paper, Box, CircularProgress, OutlinedInput, InputAdornment, styled, Tabs, Tab, TextField, Link } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { getIndexToBotHeaderImage } from './constants';
+import ClickableBubble from './ClickableChip';
 
 
+interface IMessage {
+    text: string;
+    sender: string;
+}
 
+export const classes = {
+    chatContainer: {
+        height: '100vh',
+        width: '100%',
+        padding: '0px',
+    },
+    header: {
+        // background: 'linear-gradient(45deg, #1972F5 30%, #42b3f5 90%)',  // Gradient effect
+        background: 'linear-gradient(45deg, rgb(47,148,245) 30%, rgb(120,221,255) 90%)',  // Gradient effect
+        color: '#151515',
+        height: '12%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 10px',
+        borderRadius: '10px',
+        boxShadow: '0 3px 5px 2px rgba(0, 0, 0, .3)', // subtle box-shadow
+    },
+    closeButton: {
+        marginLeft: 'auto',
+        color: '#151515',
+    },
+    messageContainer: {
+        flexGrow: 2,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '3px',
+        height: '70vh',
+        backgroundColor: "#ffffff"
+    },
+    messageHints: {
+        flexGrow: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'row',
+        padding: '3px',
+        height: '10vh',
+        backgroundColor: '#6acffd',
+        color: '#151515',
+        border: "1px solid lightgray",
+    },
+    aiMessage: {
+        backgroundColor: '#ffffff',
+        // color: '#151515',
+        margin: '10px',
+        padding: '10px',
+        maxWidth: '80%',
+        alignSelf: 'flex-start',
+        borderRadius: '1rem',
+        border: '2px solid #01c9ff'
+    },
+    customerMessage: {
+        backgroundImage: 'linear-gradient(to right bottom, #1f52e3 20%, #0ba2f6)',
+        color: '#ffffff',
+        margin: '10px',
+        padding: '10px',
+        maxWidth: '80%',
+        alignSelf: 'flex-end',
+        variant: 'outlined',
+        borderRadius: '1rem',
+    },
+    messageInputAndButtonWrapper: {
+        height: '5%',
+        paddingBottom: '2px',
+        paddingTop: '2px',
+    },
+    messageInput: {
+        width: '100%', // allow space for send button
+        innerHeight: '1rem',
+        outerHeight: '1.2rem',
+        // borderTop: '1px solid rgba(0, 0, 0, 0.1)', // subtle top border
+        // borderLeft: 'none',  // no left border
+        // borderRight: 'none', // no right border
+        // borderBottom: 'none', // no bottom border
+        border: `1px solid lightgray`,
+        borderTop: `0`,
+    },
+    sendMessageButton: {
+        color: '#151515',
+    },
+    promotional: {
+        padding: '10px 0',
+        color: 'steelblue',
+        maxHeight: '6%'
+    }
+};
 
-function WhatsappLayout({ ...props }: ChatBotProps) {
+interface MUIChatBotProps {
+    intro: IMessage[],
+    messeges: IMessage[],
+    helperBubbleMessages: string[],
+    queryInProgress: boolean,
+    processQuery: (query: string) => Promise<void>,
+    addUserMessageToChat: (query: string) => void,
+    aiName: string,
+    botName: string,
+    indexName: string,
+    integrateGA: boolean
+}
+
+export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ...props }) => {
     const messagesEndRef = React.useRef<null | HTMLDivElement>(null)
+    const [tabIndex, setTabIndex] = useState("1");
+
 
     const [inputValue, setInputValue] = useState('');
     const [messageParts, setMessageParts] = useState<string[]>([]);
@@ -48,6 +158,12 @@ function WhatsappLayout({ ...props }: ChatBotProps) {
 
 
 
+    const handleTabChange = (event: React.ChangeEvent<{}>, newValue: string) => {
+        console.debug(`tabIndex is ${newValue}`)
+        if (newValue !== undefined && newValue !== "undefined") {
+            setTabIndex(newValue);
+        }
+    };
 
 
     React.useEffect(() => {
@@ -74,164 +190,202 @@ function WhatsappLayout({ ...props }: ChatBotProps) {
         />
     }
 
-    return (
-        <div>
-            <div className="w-full h-32" style={{ backgroundColor: "#449388" }}></div>
 
-            <div className="box mx-0 w-full -mt-32">
-                <div className="h-screen">
-                    <div className="flex border border-grey rounded shadow-lg h-full">
-                        <div className="w-full border flex flex-col">
-                            <div className="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
-                                <div className="flex items-center">
+
+    const StyledTab = styled(Tab)(({ theme }) => ({
+        color: '#fff', // white color
+        textTransform: 'none', // disables uppercase transformation
+        flexGrow: 1, // allow the tabs to take up the available space
+        minHeight: '30px', // reduce the vertical height of the tabs
+        '&.Mui-selected': { // change color of the selected tab
+            color: '#fff',
+        },
+    }));
+
+
+    return (
+        <Grid container direction="column" sx={classes.chatContainer}>
+
+            <Grid container direction="row" sx={classes.header}>
+                <Grid container direction="row" item xs={11} sx={{ display: 'flex', alignItems: 'center', padding: '0 20' }}>
+                    <Grid item xs={12} sx={{ display: 'flex', alignItems: 'center', paddingBottom: '2px' }}>
+                        <Tabs
+                            textColor="inherit"
+                            indicatorColor="primary"
+                            onChange={handleTabChange}
+                            aria-label=""
+                            value={tabIndex}
+                            sx={{ width: '100%', '& .MuiTabs-indicator': { display: 'none' } }}
+                        >
+                            <StyledTab
+
+                                sx={{
+                                    justifyContent: 'left',
+                                    padding: "0, 2",
+                                    fontFamily: "Roboto",
+                                    letterSpacing: "2px",
+                                    fontSize: "larger"
+                                }}
+                                icon={<img src={process.env.PUBLIC_URL + getIndexToBotHeaderImage(props.indexName)} style={{
+                                    width: '12vw',
+                                    height: '6vh'
+                                }} />}
+                                iconPosition='start'
+                                label={botName} value="1" />
+                        </Tabs>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            {
+                tabIndex === "1" &&
+                (
+                    <Box sx={classes.messageContainer}>
+
+                        <Box sx={classes.messageContainer}>
+                            {props.intro.map((message, index) => (
+                                <Paper key={index} sx={classes.aiMessage}>
+                                    {message.text}
+                                </Paper>
+                            ))}
+                            {props.messeges.map((message, index) => (
+                                <Paper
+                                    ref={props.messeges.length - 1 === index ? messagesEndRef : null} // <- Add this line
+                                    key={index + props.intro.length + 1}
+                                    sx={
+                                        message.sender === props.aiName ? classes.aiMessage : classes.customerMessage
+                                    }
+                                >
+                                    {
+                                            <Linkify
+                                                componentDecorator={(decoratedHref, decoratedText, key) => (
+                                                    <Link
+                                                        href={decoratedHref}
+                                                        key={key}
+                                                        underline="always"
+                                                        target="_blank"
+                                                        rel="noopener"
+                                                        color="#4169e1 !important"
+                                                        variant='body2'
+                                                    >
+                                                        {decoratedText}
+                                                    </Link>
+                                                )}
+                                            >
+                                                {message.text}
+                                            </Linkify>
+
+                                    }
+                                </Paper>
+                            ))}
+                        </Box>
+                        {
+
+                            props.helperBubbleMessages.length > 0 && (
+
+                                <Box
+                                    sx={classes.messageHints && {
+                                    }}>
+                                    {
+                                        props.helperBubbleMessages.map(createBubble)
+                                    }
+                                </Box>
+                            )
+                        }
+                        {props.queryInProgress &&
+                            <Grid
+                                sx={{
+                                    fontFamily: 'Roboto, sans-serif',
+                                    backgroundColor: '#f0f0f0',
+                                    borderRadius: '20px',
+                                    padding: '0px',
+                                    maxWidth: '100%',
+                                    margin: '10px 0',
+                                    display: 'inline-flex',
+                                    fontSize: '13px'
+                                }}
+                            >
+                                <Grid item>
                                     <div>
-                                        <img className="w-10 h-10 rounded-full" src={`/images/clients/${getIndexToBotHeaderImage(props.indexName)}`} />
+                                        Agent Typing
                                     </div>
-                                    <div className="ml-4">
-                                        <p className="text-grey-darkest">
-                                            {props.botName}
-                                        </p>
-                                        <p className="text-grey-darker text-xs mt-1">
-                                            {props.queryInProgress ? "typing..." : "Online"}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex">
-                                </div>
-                            </div>
-
-                            <ChatMessageGroup messages={props.messeges} />
-
-                            {
-
-                                props.helperBubbleMessages.length > 0 && (
-                                    <div
-                                        className='
-            overflow-y-auto flex flex-row flex-wrap p-1 bg-[#dad3cc] text-[#151515] 
-        '>
-                                        {
-                                            props.helperBubbleMessages.map(createBubble)
-                                        }
-                                    </div>
-                                )
-
-                            }
-                            <div className="bg-[#f0f2f5] px-4 py-4 flex items-center">
-                                <div className="flex-1 mx-4">
-                                    <input
-                                        className="w-full border rounded px-2 py-2 bg-[#ffffff] text-black"
-                                        type="text"
-                                        value={inputValue}
-                                        onChange={handleInputChange}
-                                        placeholder='Message'
-                                        onKeyDown={handleInputKeyPress}
+                                </Grid>
+                                <Grid item>
+                                    <Typewriter
+                                        options={{
+                                            strings: ['. . .'],
+                                            autoStart: true,
+                                            loop: true,
+                                            delay: 300,
+                                            deleteSpeed: 0
+                                        }}
                                     />
-                                </div>
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="24" width="24" preserveAspectRatio="xMidYMid meet" version="1.1" x="0px" y="0px" enable-background="new 0 0 24 24" xmlSpace="preserve" onClick={handleMessageSend}><path fill="#63737c" d="M1.101,21.757L23.8,12.028L1.101,2.3l0.011,7.912l13.623,1.816L1.112,13.845 L1.101,21.757z"></path></svg>
-                                </div>
-                            </div>
-                        </div>
+                                </Grid>
+                            </Grid>
+                        }
+                        <Grid container justifyContent="flex-end" alignItems="center"
+                            sx={classes.messageInputAndButtonWrapper && {}}>
+                            <OutlinedInput
+                                sx={{
+                                    ...classes.messageInput,
+                                    borderTop: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`, // subtle top border
+                                    borderLeft: 'none',  // no left border
+                                    borderRight: 'none', // no right border
+                                    borderBottom: 'none', // no bottom border,
 
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        border: 'none',
+                                    },
+                                    '&:hover': {
+                                        borderTop: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`, // slightly darker border on hover
+                                        // borderLeft: 'none',  // no left border
+                                        // borderRight: 'none', // no right border
+                                        // borderBottom: 'none', // no bottom border,
+                                    },
+                                    '&.Mui-focused': {
+                                        borderTop: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`, // slightly darker border when focused
+                                        // borderLeft: 'none',  // no left border
+                                        // borderRight: 'none', // no right border
+                                        // borderBottom: 'none', // no bottom border,
+                                    },
+                                }}
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onKeyDown={handleInputKeyPress}
+                                // disabled={props.queryInProgress}
+                                endAdornment={
+                                    props.queryInProgress && false ? (
+                                        <InputAdornment position="end">
+                                            <CircularProgress size={20} />
+                                        </InputAdornment>
+                                    ) : null
+                                }
+                                placeholder='Hit enter to send query'
+                            />
+                            <IconButton onClick={handleMessageSend} disabled={props.queryInProgress && false}>
+                                <SendIcon />
+                            </IconButton>
+                        </Grid>
+                    </Box>
+                )
 
-export default WhatsappLayout
-
-
-function ChatMessageGroup({ messages }: MessageGroupProps) {
-    return (<div className="flex-1 overflow-auto" style={{ backgroundColor: "#DAD3CC" }}>
-        <div className="py-2 px-3">
-
-            <ConversationDate />
-
-            <ChatbotSecureNotification />
-
-            {messages.map((message, index) => {
-                if (message instanceof AIMessage) {
-                    return (
-                        <AIMessageComp
-                            key={index}
-                            message={message}
-                        />
-                    );
-                } else {
-                    return (
-                        <UserMessageComp key={index} message={message} />
-                    )
-                }
-            })}
-        </div>
-    </div>);
-}
-
-interface MessageProps {
-    message: MessageType;
-}
-interface MessageGroupProps {
-    messages: MessageType[];
-}
-function UserMessageComp({ message }: MessageProps) {
-    return <div className="flex justify-end mb-2">
-        <div className="rounded py-2 px-3" style={{ backgroundColor: "#E2F7CB" }}>
-            <p className="text-sm mt-1 text-black">
-                {message.text}
-            </p>
-            <p className="text-right text-xs text-grey-dark mt-1 text-[#7A8A91]">
-                {message.messageTime}
-            </p>
-        </div>
-    </div>;
-}
-function AIMessageComp({ message }: MessageProps) {
-    return (<div className="flex mb-2">
-        <div className="rounded py-2 px-3" style={{ backgroundColor: "#FFFFFF" }}>
-            <p className="text-left text-sm text-black mt-1">
-                {message.text}
-            </p>
-        </div>
-    </div>);
-}
-
-function ChatbotSecureNotification() {
-    return (<div className="flex justify-center mb-4">
-        <div className="rounded py-2 px-4" style={{ backgroundColor: "#D9FDD3" }}>
-            <p className="text-xs text-[#CD9D78]">
-                Messages to this chat and calls are now secured with end-to-end encryption. Tap for more info.
-            </p>
-        </div>
-    </div>);
-}
-
-function ConversationDate() {
-    return (<div className="flex justify-center mb-2">
-        <div className="rounded py-2 px-4" style={{ backgroundColor: "#FEFEFE" }}>
-            <p className="text-sm uppercase text-[#CD9D78]">
-                {toDateString(new Date())}
-            </p>
-        </div>
-    </div>);
-}
-
-interface ClickableBubbleProps {
-    content: string,
-    clickHandler: (() => void);
-    backgroundColor?: string,
-}
-const ClickableBubble = (props: ClickableBubbleProps) => {
-    return (
-        <div
-            data-te-chip-init
-            data-te-ripple-init
-            className="my-[0.3vh] mr-2 flex whitespace-nowrap cursor-pointer items-center justify-between rounded-[16px] bg-[#eceff1] px-[12px] py-0 text-[13px] font-normal normal-case leading-loose text-[#4f4f4f] shadow-none transition-[opacity] duration-300 ease-linear hover:!shadow-none active:bg-[#cacfd1] dark:bg-neutral-600 dark:text-neutral-200"
-            data-te-close="true"
-            onClick={props.clickHandler}>
-            {props.content}
-        </div>
+            }
+            {/* {
+                tabIndex === "2" && (
+                    <FAQList faqs={faqs} />
+                )
+            } */}
+            <Grid container sx={{ height: '4.4%', borderTop: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
+                <Grid item xs={8}>
+                </Grid>
+                <Grid item xs={4}>
+                    <Typography variant="caption" align="center" color="textSecondary" sx={{ padding: '10px 0', color: 'steelblue' }}>
+                        Powered by <span style={{ fontWeight: 'bold', color: 'steelblue' }}>Verifast</span>
+                    </Typography>
+                </Grid>
+            </Grid>
+        </Grid>
     );
-}
+
+};
+

@@ -42,7 +42,7 @@ export function getIndexToBotName(indexName: string): string {
     return botNameMap.get(indexName) ?? "VeriChat";
 }
 export function getIndexToBotHeaderImage(indexName: string): string {
-    return botHeaderLogo.get(indexName) ?? "v_light.svg";
+    return "v_light.svg";
 }
 export function isGAEnabled(indexName: string): boolean {
     return indexName === 'papamars' || indexName === 'guruji2' ? true : false;
