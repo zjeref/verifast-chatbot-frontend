@@ -12,34 +12,13 @@ export interface ChatBotProps {
     integrateGA: boolean
 }
 
-export interface MessageType {
+export type MessageType = {
+    type: string;
+    position: string;
     text: string;
     sender: string;
-    messageTime: string;
-}
+  }
 
-export class AIMessage implements MessageType {
-    text: string;
-    sender: string = 'AI'; // fixed value for sender
-    messageTime: string;
-
-    constructor(text: string, time: Date) {
-        this.text = text;
-        const msgTime = dateToMsgTime(time);
-        this.messageTime = msgTime
-    }
-}
-
-export class CustomerMessage implements MessageType {
-    text: string;
-    messageTime: string;
-    sender: string = 'Customer'; // fixed value for sender
-
-    constructor(text: string, time: Date) {
-        this.text = text;
-        this.messageTime = dateToMsgTime(time);
-    }
-}
 
 function dateToMsgTime(time: Date) {
     let hours = `${time.getHours()}`;

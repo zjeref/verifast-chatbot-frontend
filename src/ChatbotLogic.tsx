@@ -1,10 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getIndexSuggestions, getIndexToName, getIndexToBotName, isGAEnabled, getIntro } from './constants';
 import {MUIChatBot} from './WhatsappLayout';
-import { AIMessage, CustomerMessage, MessageType } from './ChatData';
+import { MessageType } from './ChatData';
 import { useEffect, useState } from "react";
 import { useLocation } from 'react-router-dom';
 
+export enum Postion {
+    AI = "left",
+    Rigth = "right"
+  }
+  export enum Names {
+    AI = "Mark"
+  }
 const ChatbotOnly = () => {
   const [inProgress, setInProgress] = useState(false);
   const [requiredClickableMessages, setRequiredClickableMessages] = useState(3);
@@ -33,7 +40,7 @@ const ChatbotOnly = () => {
 
 
   const createAIMessage = (messageText: string) => {
-    const newMessage: MessageType = new AIMessage(messageText, new Date());
+    const newMessage: MessageType = { type: 'text', position: Postion.AI, text: messageText, sender: Names.AI };
     return newMessage
   }
 
@@ -67,7 +74,7 @@ const ChatbotOnly = () => {
 
   const addUserMessage = (userMessage: string) => {
     setInProgress(true)
-    const customerMsg: MessageType = new CustomerMessage(userMessage, new Date());
+    const customerMsg = { type: 'text', position: 'right', text: userMessage, sender: 'Customer' };
     setMessages(oldMessages => [...oldMessages, customerMsg])
   }
 
