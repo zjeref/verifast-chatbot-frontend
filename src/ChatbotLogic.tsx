@@ -39,8 +39,9 @@ const ChatbotOnly = () => {
   }
 
 
-  const createAIMessage = (messageText: string) => {
-    const newMessage: MessageType = { type: 'text', position: Postion.AI, text: messageText, sender: Names.AI };
+  const createAIMessage = (messageContent: string | string[], messageType: string) => {
+
+    const newMessage: MessageType = { type: messageType, position: Postion.AI, content: messageContent, sender: Names.AI };
     return newMessage
   }
 
@@ -49,14 +50,14 @@ const ChatbotOnly = () => {
     if (!configuredIntro) {
       configuredIntro = `How can we help you with Verifast`
     }
-    return [createAIMessage(configuredIntro)];
+    return [createAIMessage(configuredIntro, "text")];
   }
 
   const [messages, setMessages] = useState<MessageType[]>(resolved_intro());
 
 
-  const addAiMessage = (messageText: string) => {
-    const newMessage: MessageType = createAIMessage(messageText)
+  const addAiMessage = (messageText: string, messageType: string) => {
+    const newMessage: MessageType = createAIMessage(messageText, messageType)
     setMessages(oldMessages => [...oldMessages, newMessage])
   }
 
@@ -89,18 +90,22 @@ const ChatbotOnly = () => {
     console.debug(`sending msg with sessionId ${sessionId}`)
     const {text, images} = await invokeChatEndpoint(query);
     setInProgress(false)
-    addAiMessage(text)
+    addAiMessage(text, "text")
+    console.log(images)
+    if(images.length > 0) {
+      addAiMessage(images, "array")
+    }
   }
 
 
 
   const addUserMessage = (userMessage: string) => {
     setInProgress(true)
-    const customerMsg = { type: 'text', position: 'right', text: userMessage, sender: 'Customer' };
+    const customerMsg = { type: 'text', position: 'right', content: userMessage, sender: 'Customer' };
     setMessages(oldMessages => [...oldMessages, customerMsg])
   }
 
-
+  console.log(messages)
 
   return <MUIChatBot
     intro={[]}

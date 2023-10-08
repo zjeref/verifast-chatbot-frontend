@@ -15,7 +15,7 @@ export interface ChatBotProps {
 export type MessageType = {
     type: string;
     position: string;
-    text: string;
+    content: string | string[];
     sender: string;
   }
 

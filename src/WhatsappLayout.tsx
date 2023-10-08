@@ -5,10 +5,15 @@ import { Typography, IconButton, Grid, Paper, Box, CircularProgress, OutlinedInp
 import SendIcon from '@mui/icons-material/Send';
 import { getIndexToBotHeaderImage } from './constants';
 import ClickableBubble from './ClickableChip';
+import { Carousel } from 'react-responsive-carousel';
+import 'react-responsive-carousel/lib/styles/carousel.min.css'; // Import the carousel styles
+import CarouselImage from './component/CarouselImage';
+import {FaThumbsDown, FaThumbsUp} from "react-icons/fa"
 
 
 interface IMessage {
-    text: string;
+    type: string;
+    content: string[] | string; 
     sender: string;
 }
 
@@ -62,7 +67,8 @@ export const classes = {
         maxWidth: '80%',
         alignSelf: 'flex-start',
         borderRadius: '1rem',
-        border: '2px solid #01c9ff'
+        border: '2px solid #01c9ff',
+        position:'relative',
     },
     customerMessage: {
         backgroundImage: 'linear-gradient(to right bottom, #1f52e3 20%, #0ba2f6)',
@@ -97,6 +103,12 @@ export const classes = {
         padding: '10px 0',
         color: 'steelblue',
         maxHeight: '6%'
+    },
+    carouselFeedback: {
+        display:"flex",
+        maxWidth:"300px",
+        textColor: "blue",
+        justifyContent: "end",
     }
 };
 
@@ -190,6 +202,51 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
         />
     }
 
+    async function handleFeedbackEndpoint(user_query: string | string[], backend_res: string | string[], feedback: string): Promise<any>{
+        const url = 'http://localhost:5000/verifast/feedback'; // Replace with your server URL
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+    
+        const payload = {
+            user_message:user_query,
+            backend_response: backend_res,
+            feedback: feedback
+        };
+    
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+    
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+    
+        return await response.json();
+    }
+
+    const handleNegativeFeedBack = async(index: number) => {
+        let userResponseIndex = index
+        while(props.messeges[userResponseIndex].sender!=="Customer") {
+            if(userResponseIndex===0) break;
+            userResponseIndex = userResponseIndex-1
+        }
+        const response = await handleFeedbackEndpoint(props.messeges[userResponseIndex].content, props.messeges[index].content, "negative");
+        console.log(response);
+    }
+
+    const handlePositiveFeedback = async(index: number) => {
+        let userResponseIndex = index
+        while(props.messeges[userResponseIndex].sender!=="Customer") {
+            if(userResponseIndex===0) break;
+            userResponseIndex = userResponseIndex-1
+        }
+        const response = await handleFeedbackEndpoint(props.messeges[userResponseIndex].content, props.messeges[index].content, "positive");
+        console.log(response);
+    }
+
 
 
     const StyledTab = styled(Tab)(({ theme }) => ({
@@ -202,7 +259,7 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
         },
     }));
 
-
+    console.log(props.messeges)
     return (
         <Grid container direction="column" sx={classes.chatContainer}>
 
@@ -245,7 +302,7 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                         <Box sx={classes.messageContainer}>
                             {props.intro.map((message, index) => (
                                 <Paper key={index} sx={classes.aiMessage}>
-                                    {message.text}
+                                    {message.content}
                                 </Paper>
                             ))}
                             {props.messeges.map((message, index) => (
@@ -256,7 +313,22 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                                         message.sender === props.aiName ? classes.aiMessage : classes.customerMessage
                                     }
                                 >
-                                    {
+                                       {message.type !=="text" ? (
+                                            <Box>
+                                                <Carousel showThumbs={false}>
+                                                {(message.content as string[]).map((image, imageIndex) => (
+                                                    <CarouselImage
+                                                    key={imageIndex}
+                                                    src={image}
+                                                    alt={`Image ${imageIndex}`}
+                                                    caption={`Caption for Image ${imageIndex}`}
+                                                    />
+                                                ))}
+                                                </Carousel>
+                                            </Box>
+
+                                        ) : 
+                                        (
                                             <Linkify
                                                 componentDecorator={(decoratedHref, decoratedText, key) => (
                                                     <Link
@@ -272,10 +344,18 @@ export const MUIChatBot: React.FC<MUIChatBotProps> = ({ botName = "VeriChat", ..
                                                     </Link>
                                                 )}
                                             >
-                                                {message.text}
+                                                {message.content}
                                             </Linkify>
 
-                                    }
+                                        )}
+                                        <Box sx={message.sender === props.aiName ?{display:"flex",position:"absolute", right:"0", color:"blue"}:{display:'none'}}>
+                                            <div style={{marginRight:"10px", cursor:'pointer'}} onClick={()=>handlePositiveFeedback(index)}>
+                                                <FaThumbsUp/>
+                                            </div>
+                                            <div style={{cursor:'pointer'}} onClick={()=>handleNegativeFeedBack(index)}>
+                                                <FaThumbsDown/>
+                                            </div>
+                                        </Box>
                                 </Paper>
                             ))}
                         </Box>
